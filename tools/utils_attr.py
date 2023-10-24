@@ -91,6 +91,15 @@ FFHQ_ATTR11 = [
     "surprise",
 ]
 
+cub_root_dir = '/home/longteng/datasets/cub/CUB_200_2011'
+CUB_ATTR312 = []
+
+# Read the attribute names from a file into a Python list
+with open(os.path.join(cub_root_dir, 'attributes.txt'), 'r') as f:
+    CUB_ATTR312 = [line.strip().split(' ')[1] for line in f]  # Assuming the format is "index attribute_name"
+# print(attributes)
+
+
 
 def should_ignore(_name):
     if _name.startswith("pca"):
@@ -108,6 +117,8 @@ def _attr_name_from_attr_id(ith_attr, dataset_name):
         return FFHQ_ATTR11[ith_attr]
     elif "celeba" in dataset_name:  # CelebA, CelebAMask-HQ
         return CelebA_ATTR40[ith_attr]
+    elif "cub" in dataset_name: # CUB2002011
+        return CUB_ATTR312[ith_attr]
     else:
         raise ValueError("unknown dataset_name", dataset_name)
 

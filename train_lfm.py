@@ -238,6 +238,7 @@ def train(config):
     while train_state.step < config.train.n_steps:
         nnet.train()
         batch = tree_map(lambda x: x.to(device), next(data_generator))
+
         metrics = train_step(batch)
 
         nnet.eval()

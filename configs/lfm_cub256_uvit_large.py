@@ -60,10 +60,10 @@ def get_config():
     )
 
     config.dataset = d(
-        name="celebamask256_features_cond",
-        path="assets/datasets/celebamask256_features",
-        # name="cub256_features_cond",
-        # path="assets/datasets/cub256_features_with_supervision",
+        # name="celebamask256_features_cond",
+        # path="assets/datasets/celebamask256_features",
+        name="cub256_features",
+        path="assets/datasets/cub256_features_with_supervision",
         cfg=False,
         p_uncond=0.15,
     )
@@ -84,26 +84,7 @@ def get_config():
     # _scales = [-100, -50, -10, -5, 0, 5, 10, 50, 100]
     # _scales = [-2, -1, -0.5, -0.2, 0, 0.2, 0.5, 1, 2]
     _scales = [-2.1, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
-
     _scales = [1 * s for s in _scales]
-
-    # 4, bald
-    # 7, big nose
-    # 20, Male
-    # 15, Eyeglasses
-    # 31, Smiling
-    # 22, Mustache
-    # 39, young
-    # 8 Black_Hair
-    # 9 Blond_Hair
-    # 33 Wavy_Hair
-    # 6 Big_Lips
-    # 7 Big_Nose
-    # 18 heavy_makeup
-    # 39_20, young_male
-    # 31_39, smiling_young
-    # 31_39_20: young_male_smile
-    # 31_8_22: smile_blackhair_mustache
 
     config.dissection = d(
         has_attr=True,

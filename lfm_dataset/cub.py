@@ -78,6 +78,10 @@ class CUB2002011Dataset(Dataset):
         return image, mask, attributes
 
 
+
+
+
+
 if __name__ == "__main__":
     # Usage
     transform = transforms.Compose([
