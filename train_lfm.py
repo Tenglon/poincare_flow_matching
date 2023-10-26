@@ -191,13 +191,19 @@ def train(config):
 
         def sample_fn(_n_samples):
 
+            # Teng Long debug : ode kwargs
+            solver_kwargs = dict()
+            solver_kwargs["solver"] = 'adaptive'
+            # Teng Long debug
+
             _z_init = torch.randn(_n_samples, *config.z_shape, device=device)
             if config.train.mode == "uncond":
-                kwargs = dict(y=None)
+                kwargs = dict(y=None, solver_kwargs = solver_kwargs)
             elif config.train.mode == "cond":
-                kwargs = dict(y=dataset.sample_label(_n_samples, device=device))
+                kwargs = dict(y=dataset.sample_label(_n_samples, device=device), solver_kwargs = solver_kwargs)
             else:
                 raise NotImplementedError
+
 
             _feat = score_model.decode(
                 _z_init,

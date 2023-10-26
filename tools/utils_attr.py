@@ -91,7 +91,7 @@ FFHQ_ATTR11 = [
     "surprise",
 ]
 
-cub_root_dir = '/home/longteng/datasets/cub/CUB_200_2011'
+cub_root_dir = '/local/tlong/datasets/cub/CUB_200_2011'
 CUB_ATTR312 = []
 
 # Read the attribute names from a file into a Python list
