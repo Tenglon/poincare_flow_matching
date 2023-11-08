@@ -103,12 +103,20 @@ class Toydata:
             wedge = Wedge(self.centers[i], self.wedge_length_factor * self.radius, np.degrees(start_angle), np.degrees(end_angle), facecolor=self.colors[self.index[i]], alpha=0.5, linewidth=0.1, edgecolor='k')
             ax.add_patch(wedge)
 
+    def get_source_samples(self):
+        source_samples, labels = c_normal_sample(2048 , torch.tensor(self.centers) * self.sample_position_factor, var=1e-8)
+        return source_samples, labels
+    
+    def get_target_samples(self):
+        target_samples = generate_targets(torch.tensor(self.centers), self.hierarchy, n_samples=2048, var=1e-6)
+        return target_samples
+
     def draw_samples(self, ax, manifold:str):
 
-        samples, labels = c_normal_sample(2048 , torch.tensor(self.centers) * self.sample_position_factor, var=1e-8)
-        target_samples = generate_targets(torch.tensor(self.centers), self.hierarchy, n_samples=2048, var=1e-6)
+        source_samples, labels = self.get_source_samples()
+        target_samples = self.get_target_samples()
 
-        plt.scatter(samples[:, 0], samples[:, 1], s=1, c=self.colors[labels], alpha=1, marker='o', linewidths=0.1, edgecolors='k')
+        plt.scatter(source_samples[:, 0], source_samples[:, 1], s=1, c=self.colors[labels], alpha=1, marker='o', linewidths=0.1, edgecolors='k')
         plt.scatter(target_samples[:, 0], target_samples[:, 1], s=2, c='k', alpha=1, marker='o', linewidths=0.1, edgecolors='k')
         # Set equal aspect and show the plot
         ax.set_aspect('equal')
@@ -181,12 +189,14 @@ class EucToyData(Toydata):
 
 if __name__ == "__main__":
 
+    # Test EucToyData
     toy_data = EucToyData()
     fig, ax = plt.subplots()
     toy_data.draw_fans(ax)
     toy_data.draw_parent_fans(ax)
     toy_data.draw_samples(ax)
 
+    # Test HypToyData
     toy_data = HypToyData()
     fig, ax = plt.subplots()
     toy_data.draw_fans(ax)
