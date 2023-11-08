@@ -48,7 +48,8 @@ for k in range(20000):
             torch_wrapper(model), solver="dopri5", sensitivity="adjoint", atol=1e-4, rtol=1e-4
         )
 
-        source_samples, _ = hypdata.get_source_samples(n_samples = 2048).cuda()
+        source_samples, _ = hypdata.get_source_samples(n_samples = 2048)
+        source_samples = source_samples.cuda()
         with torch.no_grad():
             traj = node.trajectory(
                 source_samples,
