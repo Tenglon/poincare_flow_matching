@@ -11,34 +11,9 @@ from utils import c_normal_sample, generate_targets
 num_fans = 12
 color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
 
-# Create colors
-cm = mpl.colormaps['tab20b']
-colors = cm(np.linspace(0, 1, 20))
-colors = colors[color_inx]
-
-# hyperparameters
-fan_center_loc_radius = 0.45
-radius = 1.0
-margin = 0.26
-angular_margin_factor = 0.7
-wedge_length_factor = 0.5
-sample_position_factor = 1.8
+# Construct a valid index
 torch.manual_seed(0)
 np.random.seed(45) # 43, 45, 48. 49, 50
-
-# Create a figure and axis
-fig, ax = plt.subplots()
-
-# Define the center and radius of the disk
-# Generate theta values
-theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
-
-# Compute x and y values
-centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
-
-# Calculate the angle for each fan
-theta = np.linspace(0.0 - margin, 2 * np.pi - margin, num_fans, endpoint=False)
-
 index = np.arange(num_fans)
 np.random.shuffle(index)
 
@@ -61,6 +36,32 @@ hierarchy = [[index.index(i) for i in range(3)],
              [index.index(i) for i in range(3, 6)], 
              [index.index(i) for i in range(6, 9)], 
              [index.index(i) for i in range(9, 12)]]
+
+# Create colors
+cm = mpl.colormaps['tab20b']
+colors = cm(np.linspace(0, 1, 20))
+colors = colors[color_inx]
+
+# hyperparameters
+fan_center_loc_radius = 0.45
+radius = 1.0
+margin = 0.26
+angular_margin_factor = 0.7
+wedge_length_factor = 0.5
+sample_position_factor = 1.8
+
+# Create a figure and axis
+fig, ax = plt.subplots()
+
+# Define the center and radius of the disk
+# Generate theta values
+theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
+
+# Compute x and y values
+centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
+
+# Calculate the angle for each fan
+theta = np.linspace(0.0 - margin, 2 * np.pi - margin, num_fans, endpoint=False)
 
 for i in range(num_fans):
     # Define the start and end points for each fan segment

@@ -12,6 +12,7 @@ from utils import c_normal_sample, generate_targets
 # Number of fans you want
 num_fans = 12
 color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
+index = np.arange(num_fans)
 hierarchy = [[0 ,1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
 
 # Create colors
@@ -40,9 +41,6 @@ centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
 # Calculate the angle for each fan
 theta = np.linspace(0.0 - margin, 2 * np.pi - margin, num_fans, endpoint=False)
 
-index = np.arange(num_fans)
-# np.random.shuffle(index)
-# print(index)
 
 for i in range(num_fans):
     # Define the start and end points for each fan segment
