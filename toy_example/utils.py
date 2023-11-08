@@ -103,12 +103,12 @@ class Toydata:
             wedge = Wedge(self.centers[i], self.wedge_length_factor * self.radius, np.degrees(start_angle), np.degrees(end_angle), facecolor=self.colors[self.index[i]], alpha=0.5, linewidth=0.1, edgecolor='k')
             ax.add_patch(wedge)
 
-    def get_source_samples(self):
-        source_samples, labels = c_normal_sample(2048 , torch.tensor(self.centers) * self.sample_position_factor, var=1e-8)
+    def get_source_samples(self, n_samples=2048):
+        source_samples, labels = c_normal_sample(n_samples , torch.tensor(self.centers) * self.sample_position_factor, var=1e-8)
         return source_samples, labels
     
-    def get_target_samples(self):
-        target_samples = generate_targets(torch.tensor(self.centers), self.hierarchy, n_samples=2048, var=1e-6)
+    def get_target_samples(self, n_samples=2048):
+        target_samples = generate_targets(torch.tensor(self.centers), self.hierarchy, n_samples=n_samples, var=1e-6)
         return target_samples
 
     def draw_samples(self, ax, manifold:str):

@@ -5,7 +5,7 @@ import torch
 from torchdyn.core import NeuralODE
 from torchcfm.model.models import MLP
 from torchcfm.conditional_flow_matching import ConditionalFlowMatcher
-from utils import torch_wrapper, plot_trajectories, c_normal_sample, generate_targets
+from utils import torch_wrapper, plot_trajectories, HypToyData, EucToyData
 
 traj_dir = "trajectory_hyp"
 shutil.rmtree(traj_dir, ignore_errors=True)
@@ -19,12 +19,18 @@ model = MLP(dim=dim, time_varying=True).cuda()
 optimizer = torch.optim.Adam(model.parameters())
 FM = ConditionalFlowMatcher(sigma=sigma)
 
+# generate data
+hypdata = HypToyData()
+source_samples, _ = hypdata.get_source_samples()
+target_samples    = hypdata.get_target_samples()
+
 start = time.time()
 for k in range(20000):
     optimizer.zero_grad()
 
-    x0 = samples[torch.randperm(samples.shape[0])[:batch_size]].cuda()
-    x1 = target_samples[torch.randperm(target_samples.shape[0])[:batch_size]].cuda()
+    x0, _  = hypdata.get_source_samples(batch_size)
+    x1     = hypdata.get_target_samples(batch_size)
+    x0, x1 = x0.cuda(), x1.cuda()
 
     t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
 
@@ -42,7 +48,7 @@ for k in range(20000):
             torch_wrapper(model), solver="dopri5", sensitivity="adjoint", atol=1e-4, rtol=1e-4
         )
 
-        source_samples = samples[torch.randperm(samples.shape[0])[:batch_size]].cuda()
+        source_samples, _ = hypdata.get_source_samples(n_samples = 2048).cuda()
         with torch.no_grad():
             traj = node.trajectory(
                 source_samples,
