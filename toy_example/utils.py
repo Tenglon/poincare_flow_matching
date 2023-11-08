@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import math
 import matplotlib.pyplot as plt
@@ -62,3 +63,51 @@ def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
     samples = torch.cat(samples, dim=0)
 
     return samples
+
+class Toydata:
+
+    def __init__(self):
+
+        self.num_fans = 12
+        self.color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
+
+        # hyperparameters
+        self.fan_center_loc_radius = 0.45
+        self.radius = 1.0
+        self.margin = 0.26
+        self.angular_margin_factor = 0.7
+        self.wedge_length_factor = 0.5
+        self.sample_position_factor = 1.8
+
+class HypToyData(Toydata):
+
+    def __init__(self):
+
+        self.index = np.arange(self.num_fans)
+        self.hierarchy = [[0 ,1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+
+class EucToyData(Toydata):
+
+    def __init__(self):
+
+        np.random.seed(45) # 43, 45, 48. 49, 50
+        self.index = np.arange(self.num_fans)
+        np.random.shuffle(self.index)
+
+        valid_flag = False
+        # Flag to check if the current index is valid
+        while not valid_flag:
+
+            valid_flag = True
+            np.random.shuffle(self.index)
+
+            for i in range(self.num_fans):
+                if abs(self.index[i] - self.index[(i + 1) % self.num_fans]) == 1 or abs(self.index[i] - self.index[(i + 1) % self.num_fans]) == self.num_fans - 1:
+                    valid_flag = False
+                    break
+
+        self.index = self.index.tolist()
+        self.hierarchy = [[self.index.index(i) for i in range(3)], 
+                    [self.index.index(i) for i in range(3, 6)], 
+                    [self.index.index(i) for i in range(6, 9)], 
+                    [self.index.index(i) for i in range(9, 12)]]

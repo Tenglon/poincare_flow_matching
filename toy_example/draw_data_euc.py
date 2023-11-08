@@ -31,7 +31,7 @@ fig, ax = plt.subplots()
 
 # Define the center and radius of the disk
 # Generate theta values
-theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False)
+theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
 
 # Compute x and y values
 centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
