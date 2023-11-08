@@ -27,9 +27,27 @@ def c_normal_sample(n, centers, dim = 2, var=1):
 
     return data, label
 
+def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
+
+    samples = []
+    n_clusters = len(hierarchy)
+    for sub_tree in hierarchy:
+        sub_centers = [centers[category] for category in sub_tree]
+        sub_centers = torch.stack(sub_centers)
+        center = sub_centers.mean(dim=0, keepdim=True)
+
+        cluster_samples, _ = c_normal_sample(n_samples // n_clusters, center, dim=2, var=var)
+        samples.append(cluster_samples)
+    
+    samples = torch.cat(samples, dim=0)
+
+    return samples
+
+
 # Number of fans you want
 num_fans = 12
 color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
+hierarchy = [[0 ,1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
 
 # Create colors
 cm = mpl.colormaps['tab20b']
@@ -77,8 +95,10 @@ for i in range(4):
     ax.add_patch(wedge)
 
 samples, labels = c_normal_sample(2048 , torch.tensor(centers) * sample_position_factor, var=1e-8)
+target_samples = generate_targets(torch.tensor(centers), hierarchy, n_samples=2048, var=1e-6)
 
-plt.scatter(samples[:, 0], samples[:, 1], s=1, c=colors[labels], alpha=1, marker='o', linewidths=0.1, edgecolors='k')
+plt.scatter(samples[:, 0], samples[:, 1], s=2, c=colors[labels], alpha=1, marker='o', linewidths=0.1, edgecolors='k')
+plt.scatter(target_samples[:, 0], target_samples[:, 1], s=2, c='k', alpha=1, marker='o', linewidths=0.1, edgecolors='k')
 # Set equal aspect and show the plot
 ax.set_aspect('equal')
 ax.set_xlim(-radius, radius)
