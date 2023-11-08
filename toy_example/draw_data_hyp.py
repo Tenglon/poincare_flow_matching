@@ -1,47 +1,12 @@
 
-import math
+import os
+import shutil
 import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge
 import matplotlib as mpl
 import numpy as np
 import torch
-
-def c_normal_sample(n, centers, dim = 2, var=1):
-    """Sample from c normal distributions.
-    n: number of samples
-    centers: centers of the c distributions
-    dim: dimension of each sample
-    var: variance of each distribution
-    """
-
-    m = torch.distributions.multivariate_normal.MultivariateNormal(
-        torch.zeros(dim), math.sqrt(var) * torch.eye(dim)
-    )
-
-    noise = m.sample((n,))
-    label = torch.multinomial(torch.ones(centers.shape[0]), n, replacement=True)
-    data = []
-    for i in range(n):
-        data.append(centers[label[i]] + noise[i])
-    data = torch.stack(data)
-
-    return data, label
-
-def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
-
-    samples = []
-    n_clusters = len(hierarchy)
-    for sub_tree in hierarchy:
-        sub_centers = [centers[category] for category in sub_tree]
-        sub_centers = torch.stack(sub_centers)
-        center = sub_centers.mean(dim=0, keepdim=True)
-
-        cluster_samples, _ = c_normal_sample(n_samples // n_clusters, center, dim=2, var=var)
-        samples.append(cluster_samples)
-    
-    samples = torch.cat(samples, dim=0)
-
-    return samples
+from utils import c_normal_sample, generate_targets
 
 
 # Number of fans you want
@@ -67,7 +32,7 @@ fig, ax = plt.subplots()
 
 # Define the center and radius of the disk
 # Generate theta values
-theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False)
+theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
 
 # Compute x and y values
 centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
