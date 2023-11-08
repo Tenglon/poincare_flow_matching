@@ -31,7 +31,7 @@ sample_position_factor = 1.8
 # Create a figure and axis
 fig, ax = plt.subplots()
 
-# Define the center and radius of the disk
+# Define the center and radius of the disk 
 # Generate theta values
 theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
 
@@ -40,7 +40,6 @@ centers = fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
 
 # Calculate the angle for each fan
 theta = np.linspace(0.0 - margin, 2 * np.pi - margin, num_fans, endpoint=False)
-
 
 for i in range(num_fans):
     # Define the start and end points for each fan segment
