@@ -12,28 +12,28 @@ shutil.rmtree(traj_dir, ignore_errors=True)
 os.makedirs(traj_dir, exist_ok=True)
 
 # define the model
-sigma = 1e-6
+sigma = 1e-3
 dim = 2
 batch_size = 512
 model = MLP(dim=dim, time_varying=True).cuda()
-optimizer = torch.optim.Adam(model.parameters())
+optimizer = torch.optim.Adam(model.parameters(),lr = 1e-4)
 FM = ConditionalFlowMatcher(sigma=sigma)
 
 # generate data
-hypdata = HypToyData()
-source_samples, _ = hypdata.get_source_samples()
-target_samples    = hypdata.get_target_samples()
+eucdata = EucToyData()
+source_samples, _ = eucdata.get_source_samples()
+target_samples    = eucdata.get_target_samples()
 
 start = time.time()
-for k in range(5000):
+for k in range(10000):
     optimizer.zero_grad()
 
-    x0, y0  = hypdata.get_source_samples(batch_size)
-    x1, h1  = hypdata.get_target_samples(batch_size)
+    x0, y0  = eucdata.get_source_samples(batch_size)
+    x1, h1  = eucdata.get_target_samples(batch_size)
 
     # Reorder the data to match the hierarchy
     reorder_index = []
-    for cluster in torch.tensor(hypdata.hierarchy):
+    for cluster in torch.tensor(eucdata.hierarchy):
         pos = torch.where(torch.isin(y0, cluster))[0]
         reorder_index.append(pos)
     reorder_index = torch.cat(reorder_index, dim=0)
@@ -56,7 +56,7 @@ for k in range(5000):
             torch_wrapper(model), solver="dopri5", sensitivity="adjoint", atol=1e-4, rtol=1e-4
         )
 
-        source_samples, _ = hypdata.get_source_samples(n_samples = 2048)
+        source_samples, _ = eucdata.get_source_samples(n_samples = 2048)
         source_samples = source_samples.cuda()
         with torch.no_grad():
             traj = node.trajectory(

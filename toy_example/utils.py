@@ -53,6 +53,7 @@ def c_normal_sample(n, centers, dim = 2, var=1):
 def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
 
     samples = []
+    labels = []
     n_clusters = len(hierarchy)
     for sub_tree in hierarchy:
         sub_centers = [centers[category] for category in sub_tree]
@@ -61,10 +62,12 @@ def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
 
         cluster_samples, _ = c_normal_sample(n_samples // n_clusters, center, dim=2, var=var)
         samples.append(cluster_samples)
+        labels.append(torch.tensor(sub_tree).repeat(n_samples // n_clusters, 1))
     
-    samples = torch.cat(samples, dim=0)
+    samples = torch.cat(samples, dim = 0)
+    labels = torch.cat(labels, dim = 0)
 
-    return samples
+    return samples, labels
 
 class Toydata:
 
@@ -104,7 +107,7 @@ class Toydata:
             ax.add_patch(wedge)
 
     def get_source_samples(self, n_samples=2048):
-        source_samples, labels = c_normal_sample(n_samples , torch.tensor(self.centers) * self.sample_position_factor, var=1e-8)
+        source_samples, labels = c_normal_sample(n_samples , torch.tensor(self.centers) * self.sample_position_factor, var=1e-6)
         return source_samples, labels
     
     def get_target_samples(self, n_samples=2048):
@@ -153,7 +156,7 @@ class EucToyData(Toydata):
 
         super().__init__()
 
-        np.random.seed(45) # 43, 45, 48. 49, 50
+        np.random.seed(48) # 43, 45, 48. 49, 50
         self.index = np.arange(self.num_fans)
         np.random.shuffle(self.index)
 
