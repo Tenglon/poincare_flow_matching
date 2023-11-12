@@ -3,7 +3,7 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 
-from .diffgeom import dist
+from diffgeom import dist
 
 _TOLEPS = {torch.float32: 1e-6, torch.float64: 1e-12}
 
@@ -373,3 +373,36 @@ def frechet_ball_backward(
         dx, dK = torch.autograd.grad(-gradf.squeeze(), (X, K), grad)
 
     return dx, dK
+
+
+if __name__ == '__main__':
+
+    # random a batch of points on the unit ball
+    x = torch.randn(3, 2)
+    x /= 1.001 * x.norm(dim=1, keepdim=True)
+    x[1:,:] /= 1.1 * x[1:, :].norm(dim=1, keepdim=True)
+
+    # shrink the points to the unit ball of curvature -1
+    c = torch.tensor(1.0)
+    # x = x / (1 + c * x.pow(2).sum(dim=-1, keepdim=True)).sqrt()
+
+    # compute the frechet mean
+    mu = frechet_mean(x, c)
+    print(mu)
+
+    # compute the frechet variance
+    var = frechet_variance(x, c, mu)
+    print(var)
+
+    # visualize the points
+    import matplotlib.pyplot as plt
+
+    # draw a circle
+    theta = torch.linspace(0, 2 * torch.pi, 100)
+    plt.plot(torch.cos(theta), torch.sin(theta))
+
+
+    plt.scatter(x[:, 0], x[:, 1])
+    plt.plot(mu[0], mu[1], 'ro', label='frechet mean', markersize=10)
+    plt.savefig('frechet_mean.png')
+

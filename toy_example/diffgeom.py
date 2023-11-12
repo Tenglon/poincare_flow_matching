@@ -73,6 +73,17 @@ def gyration(
     c: torch.Tensor,
     dim: int = -1,
 ):
+    """Compute the gyration of w along the geodesic connecting u and v.
+        Args:
+            u (torch.Tensor): A point on the manifold.
+            v (torch.Tensor): A point on the manifold.
+            w (torch.Tensor): A point on the manifold.
+            c (torch.Tensor): Curvature.
+            dim (int, optional): Dimension along which the gyration is computed.
+                Defaults to -1.
+        Returns:
+            torch.Tensor: The gyration of w along the geodesic connecting u and v.
+    """
     broadcasted_dim = max(u.dim(), v.dim(), w.dim())
     dim = dim if dim >= 0 else broadcasted_dim + dim
     u2 = u.pow(2).sum(dim=dim - broadcasted_dim + u.dim(), keepdim=True)
