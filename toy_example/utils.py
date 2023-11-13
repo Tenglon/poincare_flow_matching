@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import math
 import matplotlib.pyplot as plt
+from itertools import combinations
 
 class torch_wrapper(torch.nn.Module):
     """Wraps model to torchdyn compatible format."""
@@ -50,7 +51,7 @@ def c_normal_sample(n, centers, dim = 2, var=1):
 
     return data, label
 
-def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
+def generate_targets_mean(centers, hierarchy, n_samples=1024, var=1e-8):
 
     samples = []
     labels = []
@@ -68,6 +69,19 @@ def generate_targets(centers, hierarchy, n_samples=1024, var=1e-8):
     labels = torch.cat(labels, dim = 0)
 
     return samples, labels
+
+
+def get_oppo_pair(closest_diff, sub_tree):
+    pairs = combinations(sub_tree, 2)
+
+        # Iterate over all pairs to find the one with a difference closest to 6
+    for pair in pairs:
+        current_diff = abs(pair[0] - pair[1])
+        if abs(current_diff - 6) < abs(closest_diff - 6):
+            closest_diff = current_diff
+            closest_pair = pair
+
+    return closest_pair
 
 class Toydata:
 
@@ -111,8 +125,38 @@ class Toydata:
         return source_samples, labels
     
     def get_target_samples(self, n_samples=2048):
-        target_samples = generate_targets(torch.tensor(self.centers), self.hierarchy, n_samples=n_samples, var=1e-6)
-        return target_samples
+        """Generate target samples from the centers of the fans"""
+        target_samples, labels = generate_targets_mean(torch.tensor(self.centers), self.hierarchy, n_samples=n_samples, var=1e-6)
+        return target_samples, labels
+    
+    def generate_opposite_samples(self, n_samples=1024, var=1e-8):
+
+        source_samples_list, target_samples_list = [], []
+        source_labels_list, target_labels_list = [], []
+        n_clusters = len(self.hierarchy) * 2# maybe buggy: hard coded
+
+        # Initialize variables to track the closest difference and corresponding pair
+        closest_diff = float('inf')
+        closest_pair = None
+
+        for sub_tree in self.hierarchy:
+            closest_pair = get_oppo_pair(closest_diff, sub_tree)
+            source, target = closest_pair[0], closest_pair[1]
+
+            source_samples, _ = c_normal_sample(n_samples // n_clusters, self.centers[source], dim=2, var=var)
+            target_samples, _ = c_normal_sample(n_samples // n_clusters, self.centers[target], dim=2, var=var)
+
+            source_samples_list.append(source_samples)
+            target_samples_list.append(target_samples)
+            source_labels_list.append(torch.tensor(source).repeat(n_samples // n_clusters, 1))
+            target_labels_list.append(torch.tensor(target).repeat(n_samples // n_clusters, 1))
+
+        source_samples = torch.cat(source_samples_list, dim = 0)
+        target_samples = torch.cat(target_samples_list, dim = 0)
+        source_labels = torch.cat(source_labels_list, dim = 0)
+        target_labels = torch.cat(target_labels_list, dim = 0)
+
+        return source_samples, target_samples, source_labels, target_labels
 
     def draw_samples(self, ax, manifold:str):
 
@@ -136,6 +180,7 @@ class HypToyData(Toydata):
         super().__init__()
 
         self.index = np.arange(self.num_fans)
+        # here self.hierarchy means the position of the class on the circle
         self.hierarchy = [[0 ,1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
 
     def draw_parent_fans(self, ax):
@@ -172,6 +217,7 @@ class EucToyData(Toydata):
                     break
 
         self.index = self.index.tolist()
+        # here self.hierarchy means the position of the class on the circle
         self.hierarchy = [[self.index.index(i) for i in range(3)], 
                     [self.index.index(i) for i in range(3, 6)], 
                     [self.index.index(i) for i in range(6, 9)], 

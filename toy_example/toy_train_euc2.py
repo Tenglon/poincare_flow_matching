@@ -21,23 +21,12 @@ FM = ConditionalFlowMatcher(sigma=sigma)
 
 # generate data
 eucdata = EucToyData()
-source_samples, _ = eucdata.get_source_samples()
-target_samples, _ = eucdata.get_target_samples()
 
 start = time.time()
 for k in range(10000):
     optimizer.zero_grad()
 
-    x0, y0  = eucdata.get_source_samples(batch_size)
-    x1, h1  = eucdata.get_target_samples(batch_size)
-
-    # Reorder the data to match the hierarchy
-    reorder_index = []
-    for cluster in torch.tensor(eucdata.hierarchy):
-        pos = torch.where(torch.isin(y0, cluster))[0]
-        reorder_index.append(pos)
-    reorder_index = torch.cat(reorder_index, dim=0)
-    x0, y0 = x0[reorder_index], y0[reorder_index]
+    x0, x1, _, _ = eucdata.generate_opposite_samples(batch_size)
 
     x0, x1 = x0.cuda(), x1.cuda()
     t, xt, ut = FM.sample_location_and_conditional_flow(x0, x1)
