@@ -75,11 +75,8 @@ for pair in selected_pairs:
     # connect two fans with a line
     x0, y0 = fan_centers[pair[0], 0], fan_centers[pair[0], 1]
     x1, y1 = fan_centers[pair[1], 0], fan_centers[pair[1], 1]
-    # plt.plot([x0, x1], [y0, y1], c='k', linewidth=2.5)    
 
     # connect two fans with 1000 points
-    # x = np.linspace(x0, x1, 1000)
-    # y = np.linspace(y0, y1, 1000)
     points = geodesic_fn(np.array([x0, y0]), np.array([x1, y1]), 1000)
     x, y = points[:, 0], points[:, 1]
 
