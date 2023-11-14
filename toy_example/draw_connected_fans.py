@@ -37,6 +37,7 @@ for seed in [16, 94, 95]:
                 break
 
     print(index)
+    shulffed_colors = colors[index]
 
     index = index.tolist()
     hierarchy = [[index.index(i) for i in range(3)], 
@@ -80,17 +81,43 @@ for seed in [16, 94, 95]:
     ax.axis("off")
     # plt.show()
 
-    fan_centers = 1.2 * fan_center_loc_radius * np.vstack([np.cos(theta), np.sin(theta)]).T
+    def softmax(x, T = 1):
+        x = x / T
+        e_x = np.exp(x - np.max(x))  # Subtract max for numerical stability
+        return e_x / np.sum(e_x, axis=1, keepdims=True)
+
+    fan_centers = 1.3 * centers
     # connect the two fans within each cluster
     for sub_tree in hierarchy:
         pairs = list(combinations(sub_tree, 2))
         # random pick one pair
         inx = np.random.randint(0, len(pairs))
         pair = pairs[inx]
-        # connect two centers with a line
+        # connect two fans with a line
         x0, y0 = fan_centers[pair[0], 0], fan_centers[pair[0], 1]
         x1, y1 = fan_centers[pair[1], 0], fan_centers[pair[1], 1]
-        plt.plot([x0, x1], [y0, y1], c='k', linewidth=0.5)    
+        # plt.plot([x0, x1], [y0, y1], c='k', linewidth=2.5)    
+
+        # connect two fans with 1000 points
+        x = np.linspace(x0, x1, 1000)
+        y = np.linspace(y0, y1, 1000)
+
+        # calculate the distance to each of the 12 fan centers
+        dist = np.zeros((1000, 12))
+        for i in range(12):
+            dist[:, i] = np.sqrt((x - fan_centers[i, 0])**2 + (y - fan_centers[i, 1])**2)
+        # normalize the distance to the range [0, 1] using softmax
+        dist = softmax(-dist, T=0.02)
+
+        # dist /= np.sum(dist, axis=1, keepdims=True)
+        color_line = dist@shulffed_colors
+        color_line[color_line > 1] = 1
+
+        plt.scatter(x, y, c=color_line, s = 1, alpha=0.2)
+        
+        # put two markers for the two centers
+        plt.scatter(x0, y0, s=10, c='k')
+        plt.scatter(x1, y1, s=10, c='k')
 
     plt.savefig(f"test_{seed}.png", dpi=300)
     plt.close()
