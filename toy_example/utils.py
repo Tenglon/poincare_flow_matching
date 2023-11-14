@@ -30,6 +30,37 @@ def plot_trajectories(traj, k, save_dir):
     # plt.show()
     plt.savefig(f"{save_dir}/my_moons_step{k}.png")
 
+def plot_trajectories_cond(traj, source_labels, target_labels, target_samples, k, save_dir):
+    """Plot trajectories of some selected samples."""
+    n = 2000
+    plt.figure(figsize=(6, 6))
+    # show text on the plot for the labels
+    unique_labels = torch.unique(source_labels)
+    for label in unique_labels:
+        pos = torch.where(source_labels == label)[0][0]
+        plt.text(traj[0, pos, 0] + 0.01, traj[0, pos, 1] + 0.01, str(label.item()), fontsize=10, color="black")
+
+    # show text on the plot for the labels
+    unique_labels = torch.unique(target_labels)
+    for label in unique_labels:
+        pos = torch.where(target_labels == label)[0][0]
+        plt.text(target_samples[pos, 0] + 0.01, target_samples[pos, 1] + 0.01, str(label.item()), fontsize=10, color="blue")
+
+    plt.scatter(target_samples[:, 0], target_samples[:, 1], s= 1, alpha=0.1, c="grey")
+
+    plt.scatter(traj[0, :n, 0], traj[0, :n, 1], s=1, alpha=0.5, c="black")
+    plt.scatter(traj[:, :n, 0], traj[:, :n, 1], s=0.2, alpha=0.2, c="olive")
+    plt.scatter(traj[-1, :n, 0], traj[-1, :n, 1], s=1, alpha=0.5, c="blue")
+    plt.legend(["Prior z(S)", "Flow", "z(0)"])
+    # set range to be in -1, 1
+    plt.xlim(-1, 1)
+    plt.ylim(-1, 1)
+
+    plt.xticks([])
+    plt.yticks([])
+    # plt.show()
+    plt.savefig(f"{save_dir}/my_moons_step{k}.png")
+
 def c_normal_sample(n, centers, dim = 2, var=1):
     """Sample from c normal distributions.
     n: number of samples
@@ -37,6 +68,9 @@ def c_normal_sample(n, centers, dim = 2, var=1):
     dim: dimension of each sample
     var: variance of each distribution
     """
+
+    if len(centers.shape) == 1:
+        centers = torch.tensor(centers).unsqueeze(0)
 
     m = torch.distributions.multivariate_normal.MultivariateNormal(
         torch.zeros(dim), math.sqrt(var) * torch.eye(dim)
@@ -77,7 +111,7 @@ def get_oppo_pair(closest_diff, sub_tree):
         # Iterate over all pairs to find the one with a difference closest to 6
     for pair in pairs:
         current_diff = abs(pair[0] - pair[1])
-        if abs(current_diff - 6) < abs(closest_diff - 6):
+        if abs(current_diff - 5) <= abs(closest_diff - 5):
             closest_diff = current_diff
             closest_pair = pair
 
@@ -143,8 +177,13 @@ class Toydata:
             closest_pair = get_oppo_pair(closest_diff, sub_tree)
             source, target = closest_pair[0], closest_pair[1]
 
+            # print(f"source: {source}, target: {target}")
+            # print(f"centers: {self.centers[source]}, {self.centers[target]}")
+
             source_samples, _ = c_normal_sample(n_samples // n_clusters, self.centers[source], dim=2, var=var)
             target_samples, _ = c_normal_sample(n_samples // n_clusters, self.centers[target], dim=2, var=var)
+
+            # print(f"source_mean: {source_samples.mean(dim=0)}, target_mean: {target_samples.mean(dim=0)}")
 
             source_samples_list.append(source_samples)
             target_samples_list.append(target_samples)

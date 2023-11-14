@@ -5,7 +5,7 @@ from matplotlib.patches import Wedge
 import matplotlib as mpl
 import numpy as np
 import torch
-from utils import c_normal_sample, generate_targets
+from utils import c_normal_sample, generate_targets_mean
 
 # Number of fans you want
 num_fans = 12
@@ -79,7 +79,7 @@ for i in range(4):
     ax.add_patch(wedge)
 
 samples, labels = c_normal_sample(2048 , torch.tensor(centers) * sample_position_factor, var=1e-8)
-target_samples = generate_targets(torch.tensor(centers), hierarchy, n_samples=2048, var=1e-6)
+target_samples = generate_targets_mean(torch.tensor(centers), hierarchy, n_samples=2048, var=1e-6)
 
 plt.scatter(samples[:, 0], samples[:, 1], s=1, c=colors[labels], alpha=1, marker='o', linewidths=0.1, edgecolors='k')
 plt.scatter(target_samples[:, 0], target_samples[:, 1], s=2, c='k', alpha=1, marker='o', linewidths=0.1, edgecolors='k')
