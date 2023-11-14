@@ -6,6 +6,11 @@ import math
 import matplotlib.pyplot as plt
 from itertools import combinations
 
+def softmax(x, T = 1):
+    x = x / T
+    e_x = np.exp(x - np.max(x))  # Subtract max for numerical stability
+    return e_x / np.sum(e_x, axis=1, keepdims=True)
+
 class torch_wrapper(torch.nn.Module):
     """Wraps model to torchdyn compatible format."""
 

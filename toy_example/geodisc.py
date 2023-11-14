@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 def mobius_add(x, y):
     """Mobius addition in numpy."""
     xy = np.sum(x * y, 1, keepdims=True)
@@ -11,7 +10,6 @@ def mobius_add(x, y):
     num = (1 + 2 * xy + y2) * x + (1 - x2) * y
     den = 1 + 2 * xy + x2 * y2
     return num / den
-
 
 def mobius_mul(x, t):
     """Mobius multiplication in numpy."""
@@ -31,3 +29,4 @@ def plot_geodesic(x, y, ax, nb_points=100):
     """Plots geodesic between x and y."""
     points = geodesic_fn(x, y, nb_points)
     ax.plot(points[:, 0], points[:, 1], color='black', linewidth=1.5, alpha=1)
+    

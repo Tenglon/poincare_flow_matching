@@ -6,7 +6,7 @@ from matplotlib.patches import Wedge
 import matplotlib as mpl
 import numpy as np
 import torch
-from utils import c_normal_sample, generate_targets_mean
+from utils import c_normal_sample, generate_targets_mean, softmax
 
 # Number of fans you want
 num_fans = 12
@@ -81,18 +81,17 @@ for seed in [16, 94, 95]:
     ax.axis("off")
     # plt.show()
 
-    def softmax(x, T = 1):
-        x = x / T
-        e_x = np.exp(x - np.max(x))  # Subtract max for numerical stability
-        return e_x / np.sum(e_x, axis=1, keepdims=True)
+
 
     fan_centers = 1.3 * centers
+    selected_pairs = []
     # connect the two fans within each cluster
     for sub_tree in hierarchy:
         pairs = list(combinations(sub_tree, 2))
         # random pick one pair
         inx = np.random.randint(0, len(pairs))
         pair = pairs[inx]
+        selected_pairs.append(pair)
         # connect two fans with a line
         x0, y0 = fan_centers[pair[0], 0], fan_centers[pair[0], 1]
         x1, y1 = fan_centers[pair[1], 0], fan_centers[pair[1], 1]
@@ -121,3 +120,5 @@ for seed in [16, 94, 95]:
 
     plt.savefig(f"test_{seed}.png", dpi=300)
     plt.close()
+
+    print(selected_pairs)
