@@ -42,6 +42,7 @@ sample_position_factor = 1.8
 shuffled_index = [10, 3, 1, 7, 11, 5, 9, 0, 8, 4, 6, 2]
 selected_pairs_raw = [(0, 2), (3, 4), (7, 8), (10, 11)]
 selected_pairs = [(shuffled_index.index(item[0]), shuffled_index.index(item[1])) for item in selected_pairs_raw]
+colors_shuffled = colors[shuffled_index]
 
 
 # Generate theta values
@@ -62,7 +63,7 @@ def get_canvas(colors, num_fans, radius, angular_margin_factor, wedge_length_fac
         angular_margin = angular_margin_factor * np.pi / num_fans
         start_angle = theta[i] - angular_margin
         end_angle = theta[i] + 2 * np.pi / num_fans + angular_margin
-        wedge = Wedge(centers[i], wedge_length_factor * radius, np.degrees(start_angle), np.degrees(end_angle), facecolor=colors[shuffled_index[i]], alpha=0.5, linewidth=0.1, edgecolor='k')
+        wedge = Wedge(centers[i], wedge_length_factor * radius, np.degrees(start_angle), np.degrees(end_angle), facecolor=colors_shuffled[i], alpha=0.5, linewidth=0.1, edgecolor='k')
         ax.add_patch(wedge)
     return fig, ax
 
@@ -143,6 +144,6 @@ for k in range(10000):
             )
             # plot_trajectories_cond(traj.cpu().numpy(), source_labels, target_labels, target_samples, k, traj_dir)
             fig, ax = get_canvas(colors, num_fans, radius, angular_margin_factor, wedge_length_factor, shuffled_index, theta, centers)
-            plot_trajectories_cond2(ax, traj.cpu().numpy(), source_labels, target_labels, target_samples, colors, centers)
+            plot_trajectories_cond2(ax, traj.cpu().numpy(), source_labels, target_labels, target_samples, colors_shuffled, centers)
             fig.savefig(f"{traj_dir}/my_moons_step{k}.png")
             plt.close(fig)
