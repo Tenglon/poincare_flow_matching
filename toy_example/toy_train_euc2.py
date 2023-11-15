@@ -143,6 +143,6 @@ for k in range(10000):
             )
             # plot_trajectories_cond(traj.cpu().numpy(), source_labels, target_labels, target_samples, k, traj_dir)
             fig, ax = get_canvas(colors, num_fans, radius, angular_margin_factor, wedge_length_factor, shuffled_index, theta, centers)
-            plot_trajectories_cond2(ax, traj.cpu().numpy(), source_labels, target_labels, target_samples)
+            plot_trajectories_cond2(ax, traj.cpu().numpy(), source_labels, target_labels, target_samples, colors, centers)
             fig.savefig(f"{traj_dir}/my_moons_step{k}.png")
             plt.close(fig)

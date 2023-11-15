@@ -66,7 +66,7 @@ def plot_trajectories_cond(traj, source_labels, target_labels, target_samples, k
     # plt.show()
     plt.savefig(f"{save_dir}/my_moons_step{k}.png")
 
-def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_samples):
+def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_samples, colors, centers):
     """Plot trajectories of some selected samples."""
     n = 2000
     # show text on the plot for the labels
@@ -84,8 +84,27 @@ def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_sampl
     ax.scatter(target_samples[:, 0], target_samples[:, 1], s= 1, alpha=0.1, c="grey")
 
     ax.scatter(traj[0, :n, 0], traj[0, :n, 1], s=1, alpha=0.5, c="black")
-    ax.scatter(traj[:, :n, 0], traj[:, :n, 1], s=0.2, alpha=0.2, c="olive")
     ax.scatter(traj[-1, :n, 0], traj[-1, :n, 1], s=1, alpha=0.5, c="blue")
+
+    # connect two fans with n points
+    for i in range(traj.shape[0]):
+
+        x = traj[i, :n, 0]
+        y = traj[i, :n, 1]
+
+        # calculate the distance to each of the 12 fan centers
+        dist = np.zeros((x.shape[0], 12))
+        for j in range(12):
+            dist[:, j] = np.sqrt((x - centers[j, 0])**2 + (y - centers[j, 1])**2)
+        # normalize the distance to the range [0, 1] using softmax
+        dist = softmax(-dist, T=0.02)
+
+        # dist /= np.sum(dist, axis=1, keepdims=True)
+        color_line = dist@colors
+        color_line[color_line > 1] = 1
+
+        ax.scatter(traj[i, :n, 0], traj[i, :n, 1], s=0.2, alpha=0.2, c=color_line)
+
     ax.legend(["Prior z(S)", "Flow", "z(0)"])
     # set range to be in -1, 1
     ax.set_xlim(-1, 1)
