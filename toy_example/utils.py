@@ -66,6 +66,35 @@ def plot_trajectories_cond(traj, source_labels, target_labels, target_samples, k
     # plt.show()
     plt.savefig(f"{save_dir}/my_moons_step{k}.png")
 
+def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_samples):
+    """Plot trajectories of some selected samples."""
+    n = 2000
+    # show text on the plot for the labels
+    unique_labels = torch.unique(source_labels)
+    for label in unique_labels:
+        pos = torch.where(source_labels == label)[0][0]
+        ax.text(traj[0, pos, 0] + 0.03, traj[0, pos, 1] + 0.03, str(label.item()), fontsize=10, color="black")
+
+    # show text on the plot for the labels
+    unique_labels = torch.unique(target_labels)
+    for label in unique_labels:
+        pos = torch.where(target_labels == label)[0][0]
+        ax.text(target_samples[pos, 0] + 0.03, target_samples[pos, 1] + 0.03, str(label.item()), fontsize=10, color="blue")
+
+    ax.scatter(target_samples[:, 0], target_samples[:, 1], s= 1, alpha=0.1, c="grey")
+
+    ax.scatter(traj[0, :n, 0], traj[0, :n, 1], s=1, alpha=0.5, c="black")
+    ax.scatter(traj[:, :n, 0], traj[:, :n, 1], s=0.2, alpha=0.2, c="olive")
+    ax.scatter(traj[-1, :n, 0], traj[-1, :n, 1], s=1, alpha=0.5, c="blue")
+    ax.legend(["Prior z(S)", "Flow", "z(0)"])
+    # set range to be in -1, 1
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    # plt.show()
+
 def c_normal_sample(n, centers, dim = 2, var=1):
     """Sample from c normal distributions.
     n: number of samples
@@ -73,19 +102,45 @@ def c_normal_sample(n, centers, dim = 2, var=1):
     dim: dimension of each sample
     var: variance of each distribution
     """
-
+    centers = torch.tensor(centers)
     if len(centers.shape) == 1:
-        centers = torch.tensor(centers).unsqueeze(0)
+        centers = centers.unsqueeze(0)
 
     m = torch.distributions.multivariate_normal.MultivariateNormal(
         torch.zeros(dim), math.sqrt(var) * torch.eye(dim)
     )
 
     noise = m.sample((n,))
-    label = torch.multinomial(torch.ones(centers.shape[0]), n, replacement=True)
+    multinomial_label = torch.multinomial(torch.ones(centers.shape[0]), n, replacement=True)
     data = []
     for i in range(n):
-        data.append(centers[label[i]] + noise[i])
+        data.append(centers[multinomial_label[i]] + noise[i])
+    data = torch.stack(data)
+
+    return data, multinomial_label
+
+def c_normal_sample2(n, centers, class_inx, dim = 2, var=1):
+    """Sample from c normal distributions.
+    n: number of samples
+    centers: centers of the c distributions
+    dim: dimension of each sample
+    var: variance of each distribution
+    """
+    centers = torch.tensor(centers)
+    centers = centers[class_inx]
+    if len(centers.shape) == 1:
+        centers = centers.unsqueeze(0)
+
+    m = torch.distributions.multivariate_normal.MultivariateNormal(
+        torch.zeros(dim), math.sqrt(var) * torch.eye(dim)
+    )
+
+    noise = m.sample((n,))
+    multinomial_label = torch.multinomial(torch.ones(centers.shape[0]), n, replacement=True)
+    label = class_inx[multinomial_label]
+    data = []
+    for i in range(n):
+        data.append(centers[multinomial_label[i]] + noise[i])
     data = torch.stack(data)
 
     return data, label
@@ -129,7 +184,7 @@ class Toydata:
         self.num_fans = 12
         self.color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
 
-        # hyperparameters
+        # Hyperparameters
         self.fan_center_loc_radius = 0.45
         self.radius = 1.0
         self.margin = 0.26
