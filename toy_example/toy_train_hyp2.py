@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 
-traj_dir = "trajectory_euc"
+traj_dir = "trajectory_hyp"
 shutil.rmtree(traj_dir, ignore_errors=True)
 os.makedirs(traj_dir, exist_ok=True)
 
@@ -22,8 +22,8 @@ dim = 2
 batch_size = 1024
 model = MLP(dim=dim, time_varying=True).cuda()
 optimizer = torch.optim.Adam(model.parameters(),lr = 1e-3)
-# FM = ConditionalFlowMatcher(sigma=sigma)
-FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
+FM = ConditionalFlowMatcher(sigma=sigma)
+# FM = ExactOptimalTransportConditionalFlowMatcher(sigma=sigma)
 
 # Create colors
 color_inx = [4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18]
@@ -39,11 +39,10 @@ margin = 0.26
 angular_margin_factor = 0.7
 wedge_length_factor = 0.5
 sample_position_factor = 1.8
-shuffled_index = [10, 3, 1, 7, 11, 5, 9, 0, 8, 4, 6, 2]
+shuffled_index = list(range(num_fans))
 selected_pairs_raw = [(0, 2), (3, 4), (7, 8), (10, 11)]
 selected_pairs = [(shuffled_index.index(item[0]), shuffled_index.index(item[1])) for item in selected_pairs_raw]
 colors_shuffled = colors[shuffled_index]
-
 
 # Generate theta values
 theta = np.linspace(0, 2 * np.pi, num_fans, endpoint=False, dtype=np.float32)
@@ -67,13 +66,14 @@ def get_canvas(colors, num_fans, radius, angular_margin_factor, wedge_length_fac
         ax.add_patch(wedge)
     return fig, ax
 
+
 source_inx = torch.tensor([item[0] for item in selected_pairs])
 target_inx = torch.tensor([item[1] for item in selected_pairs])
 
 # # ------------ testing
 # # generate data 
-# x0, multinomial_label_y0 = c_normal_sample(batch_size, centers[source_inx], dim=2, var=1e-8)
-# x1, multinomial_label_y1 = c_normal_sample(batch_size, centers[target_inx], dim=2, var=1e-8)
+# x0, multinomial_label_y0 = c_normal_sample2(batch_size, centers, source_inx, dim=2, var=1e-8)
+# x1, multinomial_label_y1 = c_normal_sample2(batch_size, centers, target_inx, dim=2, var=1e-8)
 
 # # rearrange the data
 # x0 = x0[multinomial_label_y0.argsort()]
@@ -93,8 +93,9 @@ target_inx = torch.tensor([item[1] for item in selected_pairs])
 # exit()
 # # ------------ testing
 
-source_order = [7, 1, 3, 0]
-target_order = [11, 9, 8, 4]
+
+source_order = [0, 3, 7, 10]
+target_order = [2, 4, 8, 11]
 
 start = time.time()
 for k in range(10000):

@@ -1,5 +1,5 @@
 import matplotlib as mpl
-from matplotlib.patches import Wedge
+from matplotlib.patches import Wedge, Circle
 import numpy as np
 import torch
 import math
@@ -66,26 +66,46 @@ def plot_trajectories_cond(traj, source_labels, target_labels, target_samples, k
     # plt.show()
     plt.savefig(f"{save_dir}/my_moons_step{k}.png")
 
-def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_samples, colors, centers):
-    """Plot trajectories of some selected samples."""
-    n = 2000
-    # show text on the plot for the labels
-    unique_labels = torch.unique(source_labels)
-    for label in unique_labels:
-        pos = torch.where(source_labels == label)[0][0]
-        ax.text(traj[0, pos, 0] + 0.03, traj[0, pos, 1] + 0.03, str(label.item()), fontsize=10, color="black")
-
-    # show text on the plot for the labels
-    unique_labels = torch.unique(target_labels)
-    for label in unique_labels:
-        pos = torch.where(target_labels == label)[0][0]
-        ax.text(target_samples[pos, 0] + 0.03, target_samples[pos, 1] + 0.03, str(label.item()), fontsize=10, color="blue")
+def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_samples, colors, centers, highlight_prob=0.05, highlight_colors=None):
+    """Plot trajectories of some selected samples.
+    
+    Args:
+        highlight_prob: Probability for each flow to be highlighted (default: 0.05, i.e., 5%)
+        highlight_colors: List of colors to use for highlighting (default: gray)
+    """
+    # Use actual data size instead of hardcoded value
+    n = min(2000, traj.shape[1])  # Use actual number of samples, capped at 2000
+    # Category labels are not displayed on the plot (removed as requested)
 
     ax.scatter(target_samples[:, 0], target_samples[:, 1], s= 1, alpha=0.1, c="grey")
 
+    # Store handles and labels for legend
+    legend_handles = []
+    legend_labels = []
+    
+    # Add start point (black)
+    start_handle = ax.scatter([], [], s=50, alpha=0.8, c="black", marker='o')
+    legend_handles.append(start_handle)
+    legend_labels.append("Start")
+    
+    # Add end point (blue)
+    end_handle = ax.scatter([], [], s=50, alpha=0.8, c="blue", marker='o')
+    legend_handles.append(end_handle)
+    legend_labels.append("End")
+    
+    # Draw actual points
     ax.scatter(traj[0, :n, 0], traj[0, :n, 1], s=1, alpha=0.5, c="black")
     ax.scatter(traj[-1, :n, 0], traj[-1, :n, 1], s=1, alpha=0.5, c="blue")
 
+    # Default highlight color: gray (unified color for all highlighted flows)
+    if highlight_colors is None:
+        highlight_colors = ['gray']  # Unified gray color
+    
+    # Randomly select which flows to highlight (use actual data size)
+    np.random.seed(42)  # For reproducibility
+    n_flows = n  # Use actual number of samples to plot
+    highlight_mask = np.random.rand(n_flows) < highlight_prob
+    
     # connect two fans with n points
     for i in range(traj.shape[0]):
 
@@ -103,9 +123,41 @@ def plot_trajectories_cond2(ax, traj, source_labels, target_labels, target_sampl
         color_line = dist@colors
         color_line[color_line > 1] = 1
 
-        ax.scatter(traj[i, :n, 0], traj[i, :n, 1], s=0.2, alpha=0.2, c=color_line)
+        # Draw normal flows with low alpha
+        normal_mask = ~highlight_mask
+        if np.any(normal_mask):
+            # Use slice first, then boolean indexing
+            traj_slice = traj[i, :n]
+            ax.scatter(traj_slice[normal_mask, 0], traj_slice[normal_mask, 1], 
+                      s=0.2, alpha=0.2, c=color_line[normal_mask])
+        
+        # Draw highlighted flows with higher alpha and size (unified gray color, 70% transparency)
+        if np.any(highlight_mask):
+            # Use slice first, then boolean indexing
+            traj_slice = traj[i, :n]
+            # Use unified gray color for all highlighted flows
+            highlight_color = highlight_colors[0]  # Use first color (gray)
+            ax.scatter(traj_slice[highlight_mask, 0], traj_slice[highlight_mask, 1], 
+                      s=1.0, alpha=0.7, c=highlight_color)
 
-    ax.legend(["Prior z(S)", "Flow", "z(0)"])
+    # Add class labels to legend (Class1-1, 1-2, 1-3, 2-1, 2-2, 2-3, etc.)
+    # 4 parent classes, each with 3 child classes
+    for parent_idx in range(4):
+        for child_idx in range(3):
+            class_idx = parent_idx * 3 + child_idx
+            if class_idx < len(colors):
+                class_color = colors[class_idx]
+                # Ensure color is in correct format (RGB tuple or array)
+                if isinstance(class_color, np.ndarray):
+                    class_color = tuple(class_color)
+                class_handle = ax.scatter([], [], s=50, alpha=0.8, c=[class_color], marker='s')
+                legend_handles.append(class_handle)
+                legend_labels.append(f"Class{parent_idx+1}-{child_idx+1}")
+
+    # Create legend on the right side outside the plot
+    ax.legend(legend_handles, legend_labels, loc='center left', bbox_to_anchor=(1.0, 0.5), 
+              frameon=True, fancybox=True, shadow=True, fontsize=9)
+    
     # set range to be in -1, 1
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -352,6 +404,149 @@ class EucToyData(Toydata):
 
     def draw_samples(self, ax):
         super().draw_samples(ax, "euc")
+
+
+class HypToyData2(Toydata):
+    """HypToyData2 using color scheme and coordinates from fans2.py"""
+
+    def __init__(self):
+
+        super().__init__()
+
+        # Color scheme from fans2.py
+        base_hex = ['#0077BB','#EE7733','#009988','#CC3311']
+        base_rgb = [mpl.colors.to_rgb(h) for h in base_hex]
+        
+        # Color variation for grandchildren (from fans2.py)
+        variation = [-0.25, 0, 0.25]
+        
+        # Color shift functions from fans2.py
+        def lighten(rgb, amt): 
+            return tuple(np.clip(np.array(rgb) + (1 - np.array(rgb)) * amt, 0, 1))
+        def darken(rgb, amt): 
+            return tuple(np.clip(np.array(rgb) * (1 - amt), 0, 1))
+        def shift(rgb, delta): 
+            return lighten(rgb, delta) if delta >= 0 else darken(rgb, -delta)
+        
+        # Generate 12 colors: 4 parent colors, each with 3 variations
+        self.colors = []
+        for base in base_rgb:
+            for var in variation:
+                shifted = shift(base, var)
+                self.colors.append(shifted)
+        self.colors = np.array(self.colors)
+
+        # Coordinate system from fans2.py
+        def rho_to_r(rho): 
+            return np.tanh(rho / 2)
+        
+        rho_child, rho_grand = 1.2, 2.0
+        r_child = rho_to_r(rho_child)
+        r_grand = rho_to_r(rho_grand)
+        
+        n_children, n_grand = 4, 3
+        rotation = np.pi / 4
+        child_angles = np.linspace(0, 2 * np.pi, n_children, endpoint=False) + rotation
+        
+        # Compute centers: 4 child nodes + 12 grandchild nodes
+        centers_list = []
+        
+        # Child nodes (4 centers)
+        for th in child_angles:
+            child_pos = np.array([r_child * np.cos(th), r_child * np.sin(th)])
+            centers_list.append(child_pos)
+        
+        # Grandchild nodes (12 centers)
+        for i, th in enumerate(child_angles):
+            base = base_rgb[i]
+            for dth in np.linspace(-np.pi/8, np.pi/8, n_grand):
+                grand_pos = np.array([r_grand * np.cos(th + dth), r_grand * np.sin(th + dth)])
+                centers_list.append(grand_pos)
+        
+        self.centers = np.array(centers_list)
+        
+        # Index and hierarchy: same structure as HypToyData
+        self.index = np.arange(self.num_fans)
+        # Hierarchy: 4 groups of 3 (child nodes are indices 0-3, grandchildren are 4-15, but we only use 12)
+        # Actually, we have 4 child + 12 grand = 16 centers, but num_fans is 12
+        # So we use the 12 grandchild centers as the 12 fans
+        self.hierarchy = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+        
+        # Store child positions for draw_parent_fans
+        self.child_positions = self.centers[:4].copy()
+        
+        # Update centers to only use grandchild positions (12 centers)
+        self.centers = self.centers[4:]  # Skip the 4 child nodes, use 12 grandchild nodes
+        
+        # Store parameters for draw_poincare_gaussian
+        self.sigma_child = 0.6
+        self.sigma_grand = 0.4
+        self.alpha_child_peak = 0.07
+        self.alpha_grand_peak = 0.22
+        
+        # Store base colors for parent nodes
+        self.base_rgb = base_rgb
+        
+        # Update theta for the 12 centers
+        self.theta = np.linspace(0.0 - self.margin, 2 * np.pi - self.margin, self.num_fans, endpoint=False)
+
+    def _poincare_circle_euclid(self, p, rho_h):
+        """Convert Poincaré circle to Euclidean circle"""
+        def rho_to_r(rho): 
+            return np.tanh(rho / 2)
+        R = rho_to_r(rho_h)
+        norm2 = np.dot(p, p)
+        denom = 1 - norm2 * R * R
+        if denom <= 0: 
+            return None, None
+        return ((1 - R * R) / denom) * p, ((1 - norm2) * R) / denom
+
+    def _draw_poincare_gaussian(self, ax, p, sigma, color, alpha_peak, layers=50, disk=None):
+        """Draw Gaussian via true Poincaré circles"""
+        max_rho = 3 * sigma
+        for rho in np.linspace(max_rho, 0, layers, endpoint=False):
+            alpha = alpha_peak * np.exp(-rho**2 / (2 * sigma**2))
+            if alpha < 0.004: 
+                continue
+            c, r = self._poincare_circle_euclid(p, rho)
+            if c is None or r <= 1e-4: 
+                continue
+            if np.linalg.norm(c) - r >= 1: 
+                continue
+            circ = Circle(c, r, color=color, alpha=alpha, lw=0)
+            if disk is not None:
+                circ.set_clip_path(disk)
+            ax.add_patch(circ)
+
+    def draw_parent_fans(self, ax):
+        """Draw parent and child Gaussians using draw_poincare_gaussian"""
+        # Create disk for clipping
+        disk = Circle((0, 0), 1, ec='black', fill=False, lw=1.2)
+        ax.add_patch(disk)
+        ax.set_clip_path(disk)
+        
+        # Draw parent Gaussians at child positions (4 parent nodes)
+        for i in range(4):
+            base_color = self.base_rgb[i]
+            child_pos = self.child_positions[i]
+            # Draw parent Gaussian
+            self._draw_poincare_gaussian(ax, child_pos, self.sigma_child, base_color, 
+                                         self.alpha_child_peak, disk=disk)
+        
+        # Draw child Gaussians at grandchild positions (12 child nodes)
+        for i in range(4):
+            base_color = self.base_rgb[i]
+            # Get the 3 grandchild positions for this parent
+            for j in range(3):
+                grand_idx = i * 3 + j
+                grand_pos = self.centers[grand_idx]
+                grand_color = self.colors[grand_idx]
+                # Draw child Gaussian
+                self._draw_poincare_gaussian(ax, grand_pos, self.sigma_grand, grand_color, 
+                                           self.alpha_grand_peak, disk=disk)
+
+    def draw_samples(self, ax):
+        super().draw_samples(ax, "hyp2")
 
 
 if __name__ == "__main__":
